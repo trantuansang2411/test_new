@@ -42,7 +42,7 @@ describe("Products", () => {
     it("should create a new product with valid data", async () => {
       const product = {
         name: "Product 1",
-        description: "Description of Product 1",
+        description: "Description of Product 01",
         price: 10,
       };
       const res = await chai
