@@ -4,34 +4,15 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
-      mongodb:
-        image: mongo:4.4
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongo --eval 'db.stats().ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3.2.0
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Create .env files
+    - name: Create .env file
       run: |
-        echo "MONGODB_AUTH_URI=mongodb://localhost:27017/auth_test" >> auth/.env
+        echo "MONGODB_AUTH_URI=${{ secrets.MONGODB_PRODUCT_URI }}" >> auth/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> auth/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> product/.env
-        echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/product_test" >> product/.env
+        echo "MONGODB_PRODUCT_URI=${{ secrets.MONGODB_PRODUCT_URI }}" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
 
@@ -39,35 +20,18 @@ jobs:
       run: |
         cd auth
         npm ci
-        cd ../product
+        cd ..
+        cd product
         npm ci
         cd ..
         npm ci
-
-    - name: Wait for MongoDB to be ready
-      run: |
-        timeout 30 bash -c 'until nc -z localhost 27017; do sleep 1; done'
-
     - name: Run tests for auth
-      run: |
+      run : |
         cd auth
         npm test
-
     - name: Run tests for product
       run: |
-        cd auth
+        cd auth &&
         npm start &
-        AUTH_PID=$!
-        sleep 10
-        
-        # Create test user for product tests
-        curl -X POST http://localhost:3000/register \
-          -H "Content-Type: application/json" \
-          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}" \
-          || echo "Test user may already exist"
-        
-        cd ../product
+        cd product
         npm test
-        
-        # Cleanup
-        kill $AUTH_PID || true
