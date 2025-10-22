@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         node-version: [22.x]
         service: [auth, product]
@@ -26,7 +27,9 @@ jobs:
 
     - name: Install dependencies
       working-directory: ./${{ matrix.service }}
-      run: npm ci
+      run: |
+        echo "Installing dependencies for ${{ matrix.service }}"
+        npm ci
 
     - name: Run tests
       working-directory: ./${{ matrix.service }}
