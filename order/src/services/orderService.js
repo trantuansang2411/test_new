@@ -81,11 +81,7 @@ class OrderService {
 
     async getOrderById(orderId) {
         try {
-            // Sửa: dùng findByOrderMapId thay vì findOne
-            const order = await OrderRepository.findByOrderMapId(orderId);
-            if (!order) {
-                return { success: false, message: "Order not found" };
-            }
+            const order = await OrderRepository.findOne({ _id: orderId });
             return { success: true, order };
         } catch (err) {
             console.error("Failed to get order:", err.message);

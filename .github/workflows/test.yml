@@ -42,12 +42,6 @@ jobs:
         echo "NODE_ENV=test" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
-        echo "ORDER_SERVICE_URL=http://localhost:3002" >> product/.env
-        echo "MONGODB_ORDER_URI=mongodb://localhost:27017/order_test" >> order/.env
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> order/.env
-        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> order/.env
-        echo "PORT=3002" >> order/.env
 
     - name: Install dependencies
       run: |
@@ -55,9 +49,6 @@ jobs:
         npm ci
         cd ..
         cd product
-        npm ci
-        cd ..
-        cd order
         npm ci
         cd ..
         npm ci
@@ -82,12 +73,5 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
         echo "Login response: $LOGIN_RESPONSE"
-        
-        # Start Order Service
-        cd ../order
-        npm start &
-        sleep 10
-        echo "Order service started on port 3002"
-        
         cd ../product
         npm test

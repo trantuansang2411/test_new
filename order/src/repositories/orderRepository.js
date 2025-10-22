@@ -5,14 +5,8 @@ class OrderRepository {
         const order = new Order(orderData);
         return await order.save();
     }
-    // Thêm method mới: tìm theo orderMapId
-    async findByOrderMapId(orderMapId) {
-        try {
-            return await Order.findOne({ orderMapId: orderMapId });
-        } catch (error) {
-            console.error("Error finding order by orderMapId:", error.message);
-            throw error;
-        }
+    async findOne(query) {
+        return await Order.findById(query);
     }
     async findAll() {
         return await Order.find();
