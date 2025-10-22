@@ -3,6 +3,7 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const jwt = require("jsonwebtoken");
 const expect = chai.expect;
+const Product = require("../../product/src/models/productsModel");
 require("dotenv").config();
 
 chai.use(chaiHttp);
