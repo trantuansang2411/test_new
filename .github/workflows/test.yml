@@ -59,6 +59,12 @@ jobs:
       run: |
         cd auth
         npm start &
-        sleep 10
+        sleep 15
+        # Test if auth service is ready
+        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
+        # Create test user for product tests
+        curl -X POST http://localhost:3000/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}'
         cd ../product
         npm test

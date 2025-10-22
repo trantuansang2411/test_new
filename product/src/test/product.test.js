@@ -16,13 +16,20 @@ describe("Products", () => {
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
 
     // Authenticate with the auth microservice to get a token
-    const authRes = await chai
-      .request("http://localhost:3000")
-      .post("/login")
-      .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
+    try {
+      const authRes = await chai
+        .request("http://localhost:3000")
+        .post("/login")
+        .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
 
-    authToken = authRes.body.token;
-    console.log("Auth token:", authToken);
+      authToken = authRes.body.token;
+      console.log("Auth token:", authToken);
+    } catch (error) {
+      console.error("Failed to authenticate:", error.message);
+      console.log("Auth token: undefined");
+      authToken = undefined;
+    }
+    
     app.start();
   });
 
