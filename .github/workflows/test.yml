@@ -9,6 +9,11 @@ jobs:
         image: mongo:latest
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       rabbitmq:
         image: rabbitmq:3-management
         ports:
@@ -17,18 +22,18 @@ jobs:
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
+        options: >-
+          --health-cmd "rabbitmq-diagnostics check_port_connectivity"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v3.2.0
-
     - name: Create .env file
       run: |
-        # auth
         echo "MONGODB_AUTH_URI=mongodb://localhost:27017/auth_test" >> auth/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> auth/.env
-        echo "PORT=3000" >> auth/.env
-
-        # product
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> product/.env
         echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/product_test" >> product/.env
         echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
@@ -37,57 +42,36 @@ jobs:
         echo "NODE_ENV=test" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
-        echo "ORDER_SERVICE_URL=http://localhost:3002" >> product/.env
-        echo "PORT=3001" >> product/.env
-
-        # order
-        echo "MONGODB_ORDER_URI=mongodb://localhost:27017/order_test" >> order/.env
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> order/.env
-        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> order/.env
-        echo "PORT=3002" >> order/.env
 
     - name: Install dependencies
       run: |
-        cd auth && (npm ci || npm install) && cd ..
-        cd product && (npm ci || npm install) && cd ..
-        cd order && (npm ci || npm install) && cd ..
-
+        cd auth
+        npm ci
+        cd ..
+        cd product
+        npm ci
+        cd ..
+        npm ci
     - name: Run tests for auth
       run : |
         cd auth
         npm test
-        cd ..
-
-    - name: Start Auth and Order services
-      run: |
-        # Start Auth (3000)
-        cd auth
-        npm start &
-        echo $! > ../auth.pid
-        cd ..
-        # Wait and register test user (idempotent)
-        sleep 8
-        curl -s -X POST http://localhost:3000/register \
-          -H "Content-Type: application/json" \
-          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}" \
-          || echo "User may already exist"
-
-        # Start Order (3002)
-        cd order
-        npm start &
-        echo $! > ../order.pid
-        cd ..
-        sleep 8
-
     - name: Run tests for product
       run: |
-        cd product
+        cd auth
+        npm start &
+        sleep 15
+        # Test if auth service is ready
+        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
+        # Create test user for product tests
+        curl -X POST http://localhost:3000/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' || echo "User might already exist"
+        # Test login to verify JWT
+        echo "Testing login..."
+        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
+        echo "Login response: $LOGIN_RESPONSE"
+        cd ../product
         npm test
-        cd ..
-
-    - name: Cleanup
-      if: always()
-      run: |
-        if [ -f auth.pid ]; then kill $(cat auth.pid) 2>/dev/null || true; fi
-        if [ -f order.pid ]; then kill $(cat order.pid) 2>/dev/null || true; fi
