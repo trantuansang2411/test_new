@@ -7,7 +7,7 @@
 
 ## 1. Authentication Service APIs
 
-### 1.1 Register User
+## 1.1 Register User
 **Method**: POST  
 **URL**: `http://localhost:3003/auth/register`  
 **Headers**:
