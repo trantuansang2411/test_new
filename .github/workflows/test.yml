@@ -31,5 +31,6 @@ jobs:
     - name: Run tests
       working-directory: ./${{ matrix.service }}
       env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: npm test
