@@ -10,6 +10,7 @@ describe("Products", () => {
   let app;
   let authToken;
   let createdProductId;
+  let createdOrderId;
 
   before(async () => {
     app = new App();
@@ -170,6 +171,9 @@ describe("Products", () => {
       expect(res.body).to.have.property("username");
       expect(res.body).to.have.property("products");
       expect(res.body.products).to.be.an("array");
+
+      // Lưu orderId để test GET /:id
+      createdOrderId = res.body._id;
     });
 
     it("should return error for empty products array", async () => {
@@ -258,6 +262,59 @@ describe("Products", () => {
         .request(app.app)
         .post("/buy")
         .send(orderData);
+
+      expect(res).to.have.status(401);
+    });
+  });
+
+  // Helper function: đợi Order Service xử lý message từ RabbitMQ
+  async function waitForOrder(orderId, token, maxRetries = 20, delayMs = 1000) {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const res = await chai
+          .request(app.app)
+          .get(`/${orderId}`)
+          .set("Authorization", `Bearer ${token}`);
+
+        if (res.status === 200 && res.body && res.body._id) {
+          return res;
+        }
+      } catch (error) {
+        // Ignore và retry
+      }
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    throw new Error("Order not found after max retries");
+  }
+
+  describe("GET /:id", () => {
+    it("should get order details by ID successfully", async function () {
+      this.timeout(30000); // Tăng timeout vì cần đợi Order Service xử lý
+
+      // Đợi Order Service xử lý message từ RabbitMQ
+      const res = await waitForOrder(createdOrderId, authToken);
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("_id");
+      expect(res.body).to.have.property("username");
+      expect(res.body).to.have.property("products");
+      expect(res.body.products).to.be.an("array");
+      expect(res.body.products.length).to.be.greaterThan(0);
+    });
+
+    it("should return unauthorized without token", async () => {
+      const res = await chai
+        .request(app.app)
+        .get(`/${createdOrderId}`);
+
+      expect(res).to.have.status(401);
+    });
+
+    it("should return unauthorized with invalid token", async () => {
+      const res = await chai
+        .request(app.app)
+        .get(`/${createdOrderId}`)
+        .set("Authorization", "Bearer invalidtoken");
 
       expect(res).to.have.status(401);
     });
