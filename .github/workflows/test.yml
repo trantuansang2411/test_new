@@ -60,15 +60,19 @@ jobs:
         cd order
         npm ci
         cd ..
-        npm ci
+        
     - name: Run tests for auth
       run : |
         cd auth
         npm test
-    - name: Run tests for product
+        
+    - name: Start Auth and Order services
       run: |
         cd auth
         npm start &
+        AUTH_PID=$!
+        echo $AUTH_PID > ../auth.pid
+        cd ..
         sleep 15
         # Test if auth service is ready
         timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
@@ -84,10 +88,21 @@ jobs:
         echo "Login response: $LOGIN_RESPONSE"
         
         # Start Order Service
-        cd ../order
+        cd order
         npm start &
+        ORDER_PID=$!
+        echo $ORDER_PID > ../order.pid
+        cd ..
         sleep 10
         echo "Order service started on port 3002"
         
-        cd ../product
+    - name: Run tests for product
+      run: |
+        cd product
         npm test
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        if [ -f auth.pid ]; then kill $(cat auth.pid) 2>/dev/null || true; fi
+        if [ -f order.pid ]; then kill $(cat order.pid) 2>/dev/null || true; fi
