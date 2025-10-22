@@ -2,11 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");
 const AuthRoutes = require("./routes/authRoutes");
+const AuthController = require("./controllers/authController");
 
 class App {
   constructor() {
     this.app = express();
-    this.connectDB();
+    this.authController = new AuthController();
     this.setMiddlewares();
     this.setRoutes();
   }

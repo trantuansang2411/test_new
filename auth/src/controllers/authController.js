@@ -20,6 +20,13 @@ class AuthController {
   async login(req, res) {
     try {
       const { username, password } = req.body;
+      
+      // Input validation
+      if (!username || !password) {
+        return res.status(400).json({ 
+          message: !username ? "Username is required" : "Password is required" 
+        });
+      }
 
       const result = await this.authService.login(username, password);
 
@@ -36,6 +43,15 @@ class AuthController {
 
   async register(req, res) {
     try {
+      const { username, password } = req.body;
+      
+      // Input validation
+      if (!username || !password) {
+        return res.status(400).json({ 
+          message: !username ? "Username is required" : "Password is required" 
+        });
+      }
+      
       const user = req.body;
       const result = await this.authService.register(user);
       if (result.success) {
@@ -53,6 +69,12 @@ class AuthController {
   async getProfile(req, res) {
     try {
       const { username } = req.body;
+      
+      // Input validation
+      if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+      
       const result = await this.authService.getUserByName(username);
       if (result.success) {
         res.status(200).json(result.user);

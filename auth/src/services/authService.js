@@ -31,7 +31,7 @@ class AuthService {
   async register(user) {
     const existingUser = await this.userRepository.getUserByUsername(user.username);
     if (existingUser) {
-      return { success: false, message: "username is exist" };
+      return { success: false, message: "Username already taken" };
     }
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
@@ -53,6 +53,13 @@ class AuthService {
     } else {
       return { success: true, message: "Delete user success" };
     }
+  }
+  
+  async deleteTestUsers() {
+    // Delete test users created during testing
+    await this.userRepository.deleteUserByName("testuser");
+    await this.userRepository.deleteUserByName("testuser2");
+    console.log("Test users cleaned up");
   }
 }
 
