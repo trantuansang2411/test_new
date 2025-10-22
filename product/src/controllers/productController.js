@@ -39,11 +39,8 @@ class ProductController {
       }
       //kiểm tra products có đủ id và quantity không
       for (const prod of products) {
-        if (!prod._id) {
-          return res.status(400).json({ message: "Each product must have an id" });
-        }
-        if (!prod.quantity) {
-          return res.status(400).json({ message: "Each product must have quantity" });
+        if (!prod._id || prod.quantity === undefined || prod.quantity === null) {
+          return res.status(400).json({ message: "Each product must have an id and quantity" });
         }
         //check quantity > 0
         if(prod.quantity < 1){
