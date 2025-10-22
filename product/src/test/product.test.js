@@ -149,7 +149,6 @@ describe("Products", () => {
       expect(res).to.have.status(401);
     });
   });
-  // ...existing code...
 
   describe("GET /:id", () => {
     it("should get product by ID successfully", async () => {
