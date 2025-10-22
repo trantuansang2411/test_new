@@ -32,7 +32,7 @@ jobs:
         npm ci
 
     - name: Run tests
-      working-directory: ./${{ matrix.service }}
+      working-directory: ./${{ matrix.service }
       env:
           MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
