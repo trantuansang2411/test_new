@@ -157,7 +157,9 @@ describe("Products", () => {
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
-        .send(orderData);
+        .send({
+          products: orderData
+        });
 
       expect(res).to.have.status(201);
       expect(res.body).to.have.property("_id");
