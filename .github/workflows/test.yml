@@ -19,7 +19,16 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672        # cổng AMQP (ứng dụng dùng)
+          - 15672:15672      # cổng giao diện quản lý web
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
