@@ -267,15 +267,25 @@ describe("Products", () => {
     });
   });
 
-  describe("GET /:id", () => {
-    it("should get order details by ID successfully", async () => {
-      // Chờ một chút để Order Service xử lý message từ RabbitMQ
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  // Helper: poll until order is available (đợi Order Service xử lý message RabbitMQ)
+  async function waitForOrder(app, id, token, msTotal = 15000, stepMs = 1000) {
+    const start = Date.now();
+    while (Date.now() - start < msTotal) {
+      const res = await chai.request(app.app).get(`/${id}`).set("Authorization", `Bearer ${token}`);
+      if (res.status === 200 && res.body && res.body._id) {
+        return res;
+      }
+      await new Promise(r => setTimeout(r, stepMs));
+    }
+    throw new Error("Order not ready within timeout");
+  }
 
-      const res = await chai
-        .request(app.app)
-        .get(`/${createdOrderId}`)
-        .set("Authorization", `Bearer ${authToken}`);
+  describe("GET /:id", () => {
+    it("should get order details by ID successfully", async function () {
+      this.timeout(30000); // tăng timeout cho test này
+
+      // Poll đến khi Order Service đã lưu order
+      const res = await waitForOrder(app, createdOrderId, authToken, 20000, 1000);
 
       expect(res).to.have.status(200);
       expect(res.body).to.have.property("_id");
@@ -286,10 +296,7 @@ describe("Products", () => {
     });
 
     it("should return unauthorized without token", async () => {
-      const res = await chai
-        .request(app.app)
-        .get(`/${createdOrderId}`);
-
+      const res = await chai.request(app.app).get(`/${createdOrderId}`);
       expect(res).to.have.status(401);
     });
 
@@ -298,7 +305,6 @@ describe("Products", () => {
         .request(app.app)
         .get(`/${createdOrderId}`)
         .set("Authorization", "Bearer invalidtoken");
-
       expect(res).to.have.status(401);
     });
   });
