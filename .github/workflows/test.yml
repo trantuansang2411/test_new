@@ -30,4 +30,6 @@ jobs:
 
     - name: Run tests
       working-directory: ./${{ matrix.service }}
+      env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
       run: npm test
