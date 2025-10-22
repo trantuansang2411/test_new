@@ -175,7 +175,7 @@ describe("Products", () => {
     it("should return error for empty products array", async () => {
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send([]);
 
@@ -186,7 +186,7 @@ describe("Products", () => {
     it("should return error for invalid products data", async () => {
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send("invalid data");
 
@@ -203,7 +203,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -220,7 +220,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -238,7 +238,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -256,7 +256,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("//buy")
+        .post("/buy")
         .send(orderData);
 
       expect(res).to.have.status(401);

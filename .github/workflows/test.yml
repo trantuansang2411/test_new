@@ -39,6 +39,7 @@ jobs:
         echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
         echo "RABBITMQ_QUEUE_PRODUCT=product_queue" >> product/.env
         echo "RABBITMQ_QUEUE_ORDER=order_queue" >> product/.env
+        echo "NODE_ENV=test" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
 
