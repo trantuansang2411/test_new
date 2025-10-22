@@ -7,18 +7,19 @@ require("dotenv").config();
 chai.use(chaiHttp);
 const { expect } = chai;
 
-describe("User Authentication", () => {
+describe("User Authentication", function () {
   let app;
   let authToken;
 
-  before(async () => {
+  before(async function () {
     app = new App();
+    this.timeout(20000);
     console.log("Connecting to MongoDB...");
     await app.connectDB();
     app.start();
   });
 
-  after(async () => {
+  after(async function () {
     console.log("Starting cleanup...");
     await app.authController.authService.deleteTestUsers();
     console.log("Deleted test users.");
@@ -28,7 +29,7 @@ describe("User Authentication", () => {
     console.log("Stopped server.");
   });
 
-  describe("POST /register", () => {
+  describe("POST /register", function () {
     it("should register a new user", async () => {
       const res = await chai
         .request(app.app)
@@ -69,7 +70,7 @@ describe("User Authentication", () => {
     });
   });
 
-  describe("POST /login", () => {
+  describe("POST /login", function () {
     it("should return a JWT token for a valid user", async () => {
       const res = await chai
         .request(app.app)
@@ -120,7 +121,7 @@ describe("User Authentication", () => {
     });
   });
 
-  describe("GET /dashboard", () => {
+  describe("GET /dashboard", function () {
     it("should access dashboard with valid token", async () => {
       const res = await chai
         .request(app.app)
