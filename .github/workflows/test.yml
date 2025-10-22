@@ -19,7 +19,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          
+
     strategy:
       fail-fast: false
       matrix:
@@ -45,5 +45,6 @@ jobs:
       working-directory: ./${{ matrix.service }}
       env:
           MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
+          MONGODB_PRODUCT_URI: ${{ secrets.MONGODB_PRODUCT_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: npm test
