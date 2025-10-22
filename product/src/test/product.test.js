@@ -3,7 +3,6 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const jwt = require("jsonwebtoken");
 const expect = chai.expect;
-const Product = require("../models/productsModel");
 require("dotenv").config();
 
 chai.use(chaiHttp);
@@ -44,9 +43,7 @@ describe("Products", () => {
         .request(app.app)
         .post("/")
         .set("Authorization", `Bearer ${authToken}`)
-        .send({
-          products: [{ _id: product._id, quantity: 2 }]
-        });
+        .send(product);
 
       expect(res).to.have.status(201);
       expect(res.body).to.have.property("_id");
@@ -149,19 +146,18 @@ describe("Products", () => {
 
   describe("POST /buy", () => {
     it("should create an order with valid products", async () => {
-      const product = await Product.create({
-        name: "Test Product",
-        price: 100,
-        quantity: 10
-      });
+      const orderData = [
+        {
+          _id: createdProductId,
+          quantity: 2
+        }
+      ];
 
       const res = await chai
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
-        .send({
-          products: [{ _id: product._id, quantity: 2 }]
-        });
+        .send(orderData);
 
       expect(res).to.have.status(201);
       expect(res.body).to.have.property("_id");

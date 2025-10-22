@@ -32,40 +32,38 @@ class ProductController {
 
   async createOrder(req, res) {
     try {
-      // ✅ Hỗ trợ cả body là { products: [...] } và body là [...]
-      const products = Array.isArray(req.body) ? req.body : req.body.products;
+      //lấy tất cả sản phẩm từ request body
+      const products = req.body;
       if (!products || !Array.isArray(products) || products.length === 0) {
         return res.status(400).json({ message: "Invalid products data" });
       }
-
-      // kiểm tra từng sản phẩm
+      //kiểm tra products có đủ id và quantity không
       for (const prod of products) {
         if (!prod._id || prod.quantity === undefined || prod.quantity === null) {
           return res.status(400).json({ message: "Each product must have an id and quantity" });
         }
+        //check quantity > 0
         if (prod.quantity < 1) {
-          return res.status(400).json({ message: "Product quantity must be > 0" });
+          return res.status(400).json({ message: "Product quantity must be > 0" })
         }
       }
-
-      const username = req.user?.username;
+      const username = req.user.username;
+      //kiểm tra username có hợp lệ không
       if (!username) {
         return res.status(400).json({ message: "Invalid user data" });
       }
-
-      // gọi service xử lý
+      //tạo order
       const result = await this.productService.createOrder(products, username);
       if (!result.success) {
         return res.status(400).json({ message: result.message });
       }
-
+      // Trả về response
       res.status(201).json(result.order);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server error" });
     }
   }
-
 
 
   async getOrderById(req, res) {
