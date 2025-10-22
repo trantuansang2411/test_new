@@ -12,8 +12,8 @@ describe("User Authentication", () => {
   let authToken;
 
   before(async () => {
-    app = new App();
     this.timeout(20000);
+    app = new App();
     console.log("Connecting to MongoDB...");
     await app.connectDB();
     app.start();
