@@ -63,11 +63,11 @@ jobs:
         echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> order/.env
         echo "PORT=3002" >> order/.env
 
-    - name: Install dependencies
+    - name: Install dependencies (use npm install to avoid lock mismatch)
       run: |
-        cd auth && npm ci && cd ..
-        cd product && npm ci && cd ..
-        cd order && npm ci && cd ..
+        cd auth && npm install --no-audit --no-fund && cd ..
+        cd product && npm install --no-audit --no-fund && cd ..
+        cd order && npm install --no-audit --no-fund && cd ..
 
     - name: Run Auth unit tests
       run: |
@@ -77,26 +77,24 @@ jobs:
 
     - name: Start Auth and Order services
       run: |
-        # Start Auth (port 3000)
+        # Start Auth
         cd auth
         npm start &
         echo $! > ../auth.pid
         cd ..
-
         echo "Waiting for Auth..."
-        # Wait and create test user
         sleep 8
+        # Register test user (idempotent)
         curl -s -X POST http://localhost:3000/register \
           -H "Content-Type: application/json" \
           -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER || 'testuser' }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD || 'testpass' }}\"}" \
           || echo "User may already exist"
 
-        # Start Order (port 3002)
+        # Start Order
         cd order
         npm start &
         echo $! > ../order.pid
         cd ..
-
         echo "Waiting for Order..."
         sleep 8
 

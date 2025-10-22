@@ -61,7 +61,7 @@ describe("Products", () => {
     });
 
     it("should return an error if name is missing", async () => {
-      const product = { description: "desc", price: 10.99 };
+      const product = { description: "Description of Product 1", price: 10.99 };
       const res = await chai
         .request(app.app)
         .post("/")
@@ -71,7 +71,7 @@ describe("Products", () => {
     });
 
     it("should return an error if price is missing", async () => {
-      const product = { name: "No price", description: "desc" };
+      const product = { name: "Product without price", description: "Description" };
       const res = await chai
         .request(app.app)
         .post("/")
@@ -81,13 +81,13 @@ describe("Products", () => {
     });
 
     it("should return unauthorized without token", async () => {
-      const product = { name: "P2", description: "D2", price: 20 };
+      const product = { name: "Product 2", description: "Description", price: 20 };
       const res = await chai.request(app.app).post("/").send(product);
       expect(res).to.have.status(401);
     });
 
     it("should return unauthorized with invalid token", async () => {
-      const product = { name: "P3", description: "D3", price: 30 };
+      const product = { name: "Product 3", description: "Description", price: 30 };
       const res = await chai
         .request(app.app)
         .post("/")
@@ -110,6 +110,19 @@ describe("Products", () => {
       expect(res.body[0]).to.have.property("_id");
       expect(res.body[0]).to.have.property("name");
       expect(res.body[0]).to.have.property("price");
+    });
+
+    it("should return unauthorized without token", async () => {
+      const res = await chai.request(app.app).get("/");
+      expect(res).to.have.status(401);
+    });
+
+    it("should return unauthorized with invalid token", async () => {
+      const res = await chai
+        .request(app.app)
+        .get("/")
+        .set("Authorization", "Bearer invalidtoken");
+      expect(res).to.have.status(401);
     });
   });
 
@@ -200,11 +213,10 @@ describe("Products", () => {
     });
   });
 
-  // Helper: poll until order is available (đợi Order Service xử lý message RabbitMQ)
+  // Helper: wait until order is available from Order Service via Product GET /:id
   async function waitForOrder(app, id, token, msTotal = 20000, stepMs = 1000) {
     const start = Date.now();
-    // small initial delay to let message broker deliver
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500)); // initial small delay
     while (Date.now() - start < msTotal) {
       try {
         const res = await chai
@@ -214,7 +226,7 @@ describe("Products", () => {
         if (res.status === 200 && res.body && res.body._id) {
           return res;
         }
-      } catch (e) {
+      } catch (_) {
         // ignore and retry
       }
       await new Promise((r) => setTimeout(r, stepMs));
@@ -224,7 +236,8 @@ describe("Products", () => {
 
   describe("GET /:id", () => {
     it("should get order details by ID successfully", async function () {
-      this.timeout(30000); // tăng timeout cho test này
+      this.timeout(30000); // allow time for async order creation via RabbitMQ + Order service
+
       const res = await waitForOrder(app, createdOrderId, authToken, 20000, 1000);
 
       expect(res).to.have.status(200);
