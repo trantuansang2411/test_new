@@ -32,8 +32,8 @@ class ProductController {
 
   async createOrder(req, res) {
     try {
-      // Lấy mảng sản phẩm từ body
-      const { products } = req.body;
+      // ✅ Hỗ trợ cả body là { products: [...] } và body là [...]
+      const products = Array.isArray(req.body) ? req.body : req.body.products;
       if (!products || !Array.isArray(products) || products.length === 0) {
         return res.status(400).json({ message: "Invalid products data" });
       }
@@ -48,7 +48,7 @@ class ProductController {
         }
       }
 
-      const username = req.user.username;
+      const username = req.user?.username;
       if (!username) {
         return res.status(400).json({ message: "Invalid user data" });
       }
