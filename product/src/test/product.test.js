@@ -13,7 +13,9 @@ describe("Products", () => {
   let createdProductId;
 
   before(async () => {
+    process.env.NODE_ENV = 'test'; // ✅ Set test environment
     app = new App();
+    this.timeout(20000);
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
 
     // ✅ Thay vì gọi đến /login, ta tự tạo token hợp lệ:

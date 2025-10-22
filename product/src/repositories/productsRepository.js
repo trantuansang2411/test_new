@@ -1,5 +1,4 @@
 const Product = require("../models/productsModel");
-const mongoose = require("mongoose");
 
 class ProductsRepository {
   async create(product) {
@@ -16,8 +15,7 @@ class ProductsRepository {
 
   async findByIds(ids) {
     console.log("Finding products with IDs:", ids);
-    const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
-    const products = await Product.find({ _id: { $in: objectIds } }).lean();
+    const products = await Product.find({ _id: { $in: ids } }).lean();
     return products; // ✅ Đảm bảo return array
   }
 

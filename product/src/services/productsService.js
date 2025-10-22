@@ -93,8 +93,10 @@ class ProductsService {
 
     // Long polling until order is completed (skip in test environment)
     if (process.env.NODE_ENV === 'test') {
-      // In test environment, return immediately with pending status
-      return { success: true, order: this.ordersMap.get(orderId) };
+      // Wait 2 seconds for RabbitMQ to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const order = this.ordersMap.get(orderId);
+      return { success: true, order };
     }
 
     let order = this.ordersMap.get(orderId);
