@@ -14,6 +14,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        options: >-
+          --health-cmd "rabbitmq-diagnostics check_port_connectivity"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - name: Checkout code
       uses: actions/checkout@v3.2.0
@@ -23,6 +36,9 @@ jobs:
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> auth/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> product/.env
         echo "MONGODB_PRODUCT_URI=${{ secrets.MONGODB_PRODUCT_URI || 'mongodb://localhost:27017/product' }}" >> product/.env
+        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+        echo "RABBITMQ_QUEUE_PRODUCT=product_queue" >> product/.env
+        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
 
@@ -43,5 +59,6 @@ jobs:
       run: |
         cd auth &&
         npm start &
-        cd product
+        sleep 5
+        cd ../product
         npm test
