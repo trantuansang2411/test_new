@@ -1,28 +1,30 @@
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const App = require("../app");
+const jwt = require("jsonwebtoken");
 const expect = chai.expect;
 require("dotenv").config();
-const jwt = require('jsonwebtoken');
-const token = jwt.sign({ id: "test_user_id", role: "user" }, "test_jwt_secret_key", { expiresIn: "7d" });
-console.log(token);
+
 chai.use(chaiHttp);
 
 describe("Products", () => {
   let app;
-  let authToken = token;
+  let authToken;
   let createdProductId;
 
   before(async () => {
     app = new App();
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
-    app.start();
 
+    // ✅ Thay vì gọi đến /login, ta tự tạo token hợp lệ:
+    const fakeUser = { username: "test_user", role: "user" };
+    authToken = jwt.sign(fakeUser, process.env.JWT_SECRET, { expiresIn: "1h" }); // 👈 Sinh token hợp lệ
     if (!authToken) {
-      throw new Error("Missing TEST_AUTH_TOKEN environment variable");
+      throw new Error("Missing TEST_AUTH_TOKEN in environment variables!");
     }
 
-    console.log("Using pre-generated token:", authToken.substring(0, 20) + "...");
+    console.log("Authtication token complete:", authToken);
+    app.start();
   });
 
   after(async () => {
@@ -34,7 +36,7 @@ describe("Products", () => {
     it("should create a new product with valid data", async () => {
       const product = {
         name: "Product 1",
-        description: "Description of Product 01",
+        description: "Description of Product 1",
         price: 10,
       };
       const res = await chai
