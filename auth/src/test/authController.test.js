@@ -18,9 +18,13 @@ describe("User Authentication", () => {
   });
 
   after(async () => {
+    console.log("Starting cleanup...");
     await app.authController.authService.deleteTestUsers();
+    console.log("Deleted test users.");
     await app.disconnectDB();
+    console.log("Disconnected DB.");
     app.stop();
+    console.log("Stopped server.");
   });
 
   describe("POST /register", () => {
