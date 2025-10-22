@@ -40,25 +40,27 @@ jobs:
     - name: Create .env files
       run: |
         # auth
-        echo "MONGODB_AUTH_URI=mongodb://localhost:27017/auth_test" >> auth/.env
+        echo "MONGODB_AUTH_URI=${{ vars.MONGODB_AUTH_URI || 'mongodb://localhost:27017/auth_test' }}" >> auth/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> auth/.env
+        echo "PORT=3000" >> auth/.env
 
         # product
         echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> product/.env
-        echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/product_test" >> product/.env
-        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
-        echo "RABBITMQ_QUEUE_PRODUCT=product_queue" >> product/.env
-        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> product/.env
-        echo "NODE_ENV=test" >> product/.env
+        echo "MONGODB_PRODUCT_URI=${{ vars.MONGODB_PRODUCT_URI || 'mongodb://localhost:27017/product_test' }}" >> product/.env
+        echo "RABBITMQ_URI=${{ vars.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}" >> product/.env
+        echo "RABBITMQ_QUEUE_PRODUCT=${{ vars.RABBITMQ_QUEUE_PRODUCT || 'product_queue' }}" >> product/.env
+        echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> product/.env
+        echo "NODE_ENV=${{ vars.NODE_ENV || 'test' }}" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER || 'testuser' }}" >> product/.env
         echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD || 'testpass' }}" >> product/.env
-        echo "ORDER_SERVICE_URL=http://localhost:3002" >> product/.env
+        echo "ORDER_SERVICE_URL=${{ vars.ORDER_SERVICE_URL || 'http://localhost:3002' }}" >> product/.env
+        echo "PORT=3001" >> product/.env
 
         # order
-        echo "MONGODB_ORDER_URI=mongodb://localhost:27017/order_test" >> order/.env
+        echo "MONGODB_ORDER_URI=${{ vars.MONGODB_ORDER_URI || 'mongodb://localhost:27017/order_test' }}" >> order/.env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> order/.env
-        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> order/.env
+        echo "RABBITMQ_URI=${{ vars.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}" >> order/.env
+        echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> order/.env
         echo "PORT=3002" >> order/.env
 
     - name: Install dependencies
@@ -81,8 +83,8 @@ jobs:
         echo $! > ../auth.pid
         cd ..
 
-        # Wait for Auth ready and create test user
         echo "Waiting for Auth..."
+        # Wait and create test user
         sleep 8
         curl -s -X POST http://localhost:3000/register \
           -H "Content-Type: application/json" \
@@ -95,7 +97,6 @@ jobs:
         echo $! > ../order.pid
         cd ..
 
-        # Wait for Order ready
         echo "Waiting for Order..."
         sleep 8
 
