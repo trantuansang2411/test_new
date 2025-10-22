@@ -14,7 +14,7 @@ This project implements a microservices architecture with automated testing usin
 ### Local Testing
 
 #### Prerequisites
-- Node.js 18+
+- Node.js 18
 - MongoDB running on localhost:27017
 - Environment variables set up
 
