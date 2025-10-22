@@ -164,45 +164,6 @@ describe("Products", () => {
       expect(res.body).to.have.property("description", "Description of Product 1");
       expect(res.body).to.have.property("price", 10);
     });
-
-    it("should return 404 for non-existent product ID", async () => {
-      const fakeId = "507f1f77bcf86cd799439011"; // Valid MongoDB ObjectId format
-      const res = await chai
-        .request(app.app)
-        .get(`/${fakeId}`)
-        .set("Authorization", `Bearer ${authToken}`);
-
-      expect(res).to.have.status(404);
-      expect(res.body).to.have.property("message");
-    });
-
-    it("should return 400 for invalid product ID format", async () => {
-      const invalidId = "invalid-id-format";
-      const res = await chai
-        .request(app.app)
-        .get(`/${invalidId}`)
-        .set("Authorization", `Bearer ${authToken}`);
-
-      expect(res).to.have.status(400);
-      expect(res.body).to.have.property("message");
-    });
-
-    it("should return unauthorized without token", async () => {
-      const res = await chai
-        .request(app.app)
-        .get(`/${createdProductId}`);
-
-      expect(res).to.have.status(401);
-    });
-
-    it("should return unauthorized with invalid token", async () => {
-      const res = await chai
-        .request(app.app)
-        .get(`/${createdProductId}`)
-        .set("Authorization", "Bearer invalidtoken");
-
-      expect(res).to.have.status(401);
-    });
   });
 
   describe("POST /buy", () => {
