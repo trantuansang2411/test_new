@@ -63,6 +63,7 @@ class ProductsService {
     const orderId = uuid.v4(); // Generate a unique order ID
     //lưu product từ mảng foundProducts vào order
     this.ordersMap.set(orderId, {
+      _id: orderId,
       status: "pending",
       products: productsOrder,
       username: username
