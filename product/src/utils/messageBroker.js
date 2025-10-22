@@ -8,24 +8,24 @@ class MessageBroker {
   async connect(maxRetries = 5, baseDelay = 2000) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Connecting to RabbitMQ... (${attempt}/${maxRetries})`);
-        
+        console.log(`Connecting to RabbitMQ.. (${attempt}/${maxRetries})`);
+
         this.connection = await amqp.connect(config.rabbitMQURI);
         this.channel = await this.connection.createChannel();
-        
+
         await this.channel.assertQueue(config.queueNameProduct, { durable: true });
         await this.channel.assertQueue(config.queueNameOrder, { durable: true });
-        
+
         console.log("RabbitMQ connected successfully");
         return;
-        
+
       } catch (error) {
         console.error(`Connection attempt ${attempt} failed:`, error.message);
-        
+
         if (attempt === maxRetries) {
           throw new Error(`Failed to connect after ${maxRetries} attempts`);
         }
-        
+
         // Exponential backoff: 2s, 4s, 8s, 16s
         const delay = baseDelay * Math.pow(2, attempt - 1);
         console.log(`Retrying in ${delay / 1000}s...`);
