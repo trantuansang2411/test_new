@@ -52,7 +52,7 @@ jobs:
         echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> product/.env
         echo "NODE_ENV=${{ vars.NODE_ENV || 'test' }}" >> product/.env
         echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER || 'testuser' }}" >> product/.env
-        echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD || 'testpass' }}" >> product/.env
+        echo "LOGIN_TEST_PASSWORD=${{ secrets_LOGIN_TEST_PASSWORD || secrets.LOGIN_TEST_PASSWORD || 'testpass' }}" >> product/.env
         echo "ORDER_SERVICE_URL=${{ vars.ORDER_SERVICE_URL || 'http://localhost:3002' }}" >> product/.env
         echo "PORT=3001" >> product/.env
 
@@ -63,7 +63,7 @@ jobs:
         echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> order/.env
         echo "PORT=3002" >> order/.env
 
-    - name: Install dependencies (use npm install to avoid lock mismatch)
+    - name: Install dependencies (no lock sync issues)
       run: |
         cd auth && npm install --no-audit --no-fund && cd ..
         cd product && npm install --no-audit --no-fund && cd ..
