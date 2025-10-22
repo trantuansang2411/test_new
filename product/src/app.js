@@ -8,16 +8,15 @@ require("dotenv").config();
 class App {
   constructor() {
     this.app = express();
-    this.connectDB();
     this.setMiddlewares();
     this.setRoutes();
-    this.setupMessageBroker();
   }
 
   async connectDB() {
     await mongoose.connect(config.mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000,
     });
     console.log("MongoDB connected");
   }

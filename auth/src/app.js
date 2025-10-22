@@ -16,9 +16,7 @@ class App {
     await mongoose.connect(config.mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // 10 seconds
-      bufferMaxEntries: 0,
-      bufferCommands: false,
+      serverSelectionTimeoutMS: 30000, // 30 seconds
     });
     console.log("MongoDB connected");
   }
@@ -38,12 +36,7 @@ class App {
   }
 
   start() {
-    this.connectDB().then(() => {
-      this.server = this.app.listen(3000, () => console.log("Server started on port 3000"));
-    }).catch(err => {
-      console.error("Failed to connect to MongoDB:", err);
-      process.exit(1);
-    });
+    this.server = this.app.listen(3000, () => console.log("Server started on port 3000"));
   }
 
   async stop() {
