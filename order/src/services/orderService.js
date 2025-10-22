@@ -19,7 +19,7 @@ class OrderService {
                 quantity: p.quantity,
                 price: p.price
             }));
-            if (!listProducts || !username || !orderId ) {
+            if (!listProducts || !username || !orderId) {
                 throw new Error("Missing required order data: products, username, or orderId");
             }
             //kiểm tra từng sản phẩm trong listProducts
@@ -68,7 +68,7 @@ class OrderService {
                 message: err.message,
                 timestamp: new Date().toISOString()
             };
-            
+
             try {
                 await messageBroker.publishMessage(config.queueNameProduct, errorResponse);
                 console.log("Error message sent to product service");
@@ -81,7 +81,7 @@ class OrderService {
 
     async getOrderById(orderId) {
         try {
-            const order = await OrderRepository.findOne({ _id: orderId });
+            const order = await OrderRepository.findOne({ orderMapId: orderId });
             return { success: true, order };
         } catch (err) {
             console.error("Failed to get order:", err.message);
