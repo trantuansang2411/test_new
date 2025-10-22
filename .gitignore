@@ -32,6 +32,6 @@ logs
 *.log
 
 # Optional lock files (tùy nhóm quy định)
-# package-lock.json
+#package-lock.json
 yarn.lock
 pnpm-lock.yaml
