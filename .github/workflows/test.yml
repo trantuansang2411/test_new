@@ -46,5 +46,8 @@ jobs:
       env:
           MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
           MONGODB_PRODUCT_URI: ${{ secrets.MONGODB_PRODUCT_URI }}
+          RABBITMQ_URI: ${{ secrets.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}
+          RABBITMQ_QUEUE_PRODUCT: ${{ secrets.RABBITMQ_QUEUE_PRODUCT || 'product_queue' }}
+          RABBITMQ_QUEUE_ORDER: ${{ secrets.RABBITMQ_QUEUE_ORDER || 'order_queue' }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: npm test
