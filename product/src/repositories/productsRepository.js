@@ -8,6 +8,11 @@ class ProductsRepository {
   async findById(productId) {
     return await Product.findById(productId).lean(); // Sử dụng .lean() để trả về Plain Object
   }
+  
+  async findByName(name) {
+    return await Product.findOne({ name }).lean();
+  }
+  
   async findByIds(ids) {
     console.log("Finding products with IDs:", ids);
     const products = await Product.find({ _id: { $in: ids } }).lean();

@@ -65,6 +65,12 @@ jobs:
         # Create test user for product tests
         curl -X POST http://localhost:3000/register \
           -H "Content-Type: application/json" \
-          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}'
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' || echo "User might already exist"
+        # Test login to verify JWT
+        echo "Testing login..."
+        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
+        echo "Login response: $LOGIN_RESPONSE"
         cd ../product
         npm test

@@ -12,6 +12,13 @@ class ProductController {
     try {
       const product = req.body;
       
+      // Input validation
+      if (!product.name || !product.price) {
+        return res.status(400).json({ 
+          message: !product.name ? "Product name is required" : "Product price is required" 
+        });
+      }
+      
       const result = await this.productService.createProduct(product);
       if (!result.success) {
         return res.status(400).json({ message: result.message });
