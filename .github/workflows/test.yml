@@ -51,15 +51,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd auth
-        npm ci
-        cd ..
-        cd product
-        npm ci
-        cd ..
-        cd order
-        npm ci
-        cd ..
+        cd auth && (npm ci || npm install --no-audit --no-fund) && cd ..
+        cd product && (npm ci || npm install --no-audit --no-fund) && cd ..
+        cd order && (npm ci || npm install --no-audit --no-fund) && cd ..
         
     - name: Run tests for auth
       run : |
