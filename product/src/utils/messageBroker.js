@@ -8,7 +8,7 @@ class MessageBroker {
   async connect(maxRetries = 5, baseDelay = 2000) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Connecting to RabbitMQ.. (${attempt}/${maxRetries})`);
+        console.log(`Connecting to RabbitMQ... (${attempt}/${maxRetries})`);
 
         this.connection = await amqp.connect(config.rabbitMQURI);
         this.channel = await this.connection.createChannel();
