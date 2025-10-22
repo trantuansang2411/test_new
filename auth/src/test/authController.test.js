@@ -13,6 +13,8 @@ describe("User Authentication", () => {
 
   before(async () => {
     app = new App();
+    this.timeout(20000);
+    console.log("Connecting to MongoDB...");
     await app.connectDB();
     app.start();
   });
