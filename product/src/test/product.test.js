@@ -14,23 +14,15 @@ describe("Products", () => {
   before(async () => {
     app = new App();
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
+    app.start();
 
-    // Authenticate with the auth microservice to get a token
-    try {
-      const authRes = await chai
-        .request("http://localhost:3000")
-        .post("/login")
-        .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
+    authToken = process.env.TEST_AUTH_TOKEN;
 
-      authToken = authRes.body.token;
-      console.log("Auth token:", authToken);
-    } catch (error) {
-      console.error("Failed to authenticate:", error.message);
-      console.log("Auth token: undefined");
-      authToken = undefined;
+    if (!authToken) {
+      throw new Error("Missing TEST_AUTH_TOKEN environment variable");
     }
 
-    app.start();
+    console.log("Using pre-generated token:", authToken.substring(0, 20) + "...");
   });
 
   after(async () => {
