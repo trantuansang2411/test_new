@@ -1,4 +1,5 @@
 const Product = require("../models/productsModel");
+const mongoose = require("mongoose");
 
 class ProductsRepository {
   async create(product) {
