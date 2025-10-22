@@ -31,7 +31,7 @@ describe("Products", () => {
     app.stop();
   });
 
-  describe("POST /api/products", () => {
+  describe("POST /buy", () => {
     it("should create a new product with valid data", async () => {
       const product = {
         name: "Product 1",
@@ -40,7 +40,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
 
@@ -59,7 +59,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
 
@@ -73,7 +73,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
 
@@ -88,7 +88,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/")
         .send(product);
 
       expect(res).to.have.status(401);
@@ -102,7 +102,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/")
         .set("Authorization", "Bearer invalidtoken")
         .send(product);
 
@@ -110,11 +110,11 @@ describe("Products", () => {
     });
   });
 
-  describe("GET /api/products", () => {
+  describe("GET /", () => {
     it("should get all products", async () => {
       const res = await chai
         .request(app.app)
-        .get("/api/products")
+        .get("/")
         .set("Authorization", `Bearer ${authToken}`);
 
       expect(res).to.have.status(200);
@@ -128,7 +128,7 @@ describe("Products", () => {
     it("should return unauthorized without token", async () => {
       const res = await chai
         .request(app.app)
-        .get("/api/products");
+        .get("/");
 
       expect(res).to.have.status(401);
     });
@@ -136,14 +136,14 @@ describe("Products", () => {
     it("should return unauthorized with invalid token", async () => {
       const res = await chai
         .request(app.app)
-        .get("/api/products")
+        .get("/")
         .set("Authorization", "Bearer invalidtoken");
 
       expect(res).to.have.status(401);
     });
   });
 
-  describe("POST /api/products/buy", () => {
+  describe("POST /buy", () => {
     it("should create an order with valid products", async () => {
       const orderData = [
         {
@@ -154,7 +154,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -168,7 +168,7 @@ describe("Products", () => {
     it("should return error for empty products array", async () => {
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send([]);
 
@@ -179,7 +179,7 @@ describe("Products", () => {
     it("should return error for invalid products data", async () => {
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send("invalid data");
 
@@ -196,7 +196,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -213,7 +213,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -231,7 +231,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send(orderData);
 
@@ -249,7 +249,7 @@ describe("Products", () => {
 
       const res = await chai
         .request(app.app)
-        .post("/api/products/buy")
+        .post("//buy")
         .send(orderData);
 
       expect(res).to.have.status(401);
