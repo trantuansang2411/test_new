@@ -15,7 +15,8 @@ class ProductsRepository {
 
   async findByIds(ids) {
     console.log("Finding products with IDs:", ids);
-    const products = await Product.find({ _id: { $in: ids } }).lean();
+    const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+    const products = await Product.find({ _id: { $in: objectIds } }).lean();
     return products; // ✅ Đảm bảo return array
   }
 
