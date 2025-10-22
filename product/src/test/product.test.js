@@ -3,20 +3,20 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const expect = chai.expect;
 require("dotenv").config();
-
+const jwt = require('jsonwebtoken');
+const token = jwt.sign({ id: "test_user_id", role: "user" }, "test_jwt_secret_key", { expiresIn: "7d" });
+console.log(token);
 chai.use(chaiHttp);
 
 describe("Products", () => {
   let app;
-  let authToken;
+  let authToken = token;
   let createdProductId;
 
   before(async () => {
     app = new App();
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
     app.start();
-
-    authToken = process.env.TEST_AUTH_TOKEN;
 
     if (!authToken) {
       throw new Error("Missing TEST_AUTH_TOKEN environment variable");
