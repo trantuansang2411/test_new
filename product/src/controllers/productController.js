@@ -33,7 +33,7 @@ class ProductController {
   async createOrder(req, res) {
     try {
       //lấy tất cả sản phẩm từ request body
-      const products = req.body;
+      const { products } = req.body;
       if (!products || !Array.isArray(products) || products.length === 0) {
         return res.status(400).json({ message: "Invalid products data" });
       }

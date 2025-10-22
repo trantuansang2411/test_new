@@ -44,7 +44,9 @@ describe("Products", () => {
         .request(app.app)
         .post("/")
         .set("Authorization", `Bearer ${authToken}`)
-        .send(product);
+        .send({
+          products: [{ _id: product._id, quantity: 2 }]
+        });
 
       expect(res).to.have.status(201);
       expect(res.body).to.have.property("_id");
