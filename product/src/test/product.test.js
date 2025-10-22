@@ -146,19 +146,18 @@ describe("Products", () => {
 
   describe("POST /buy", () => {
     it("should create an order with valid products", async () => {
-      const orderData = [
-        {
-          _id: createdProductId,
-          quantity: 2
-        }
-      ];
+      const product = await Product.create({
+        name: "Test Product",
+        price: 100,
+        quantity: 10
+      });
 
       const res = await chai
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send({
-          products: orderData
+          products: [{ _id: product._id, quantity: 2 }]
         });
 
       expect(res).to.have.status(201);
