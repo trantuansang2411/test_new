@@ -38,22 +38,6 @@ class AuthService {
     const newuser = await this.userRepository.createUser(user);
     return { success: true, newuser };
   }
-  async getUserByName(username) {
-    const user = await this.userRepository.getUserByUsername(username);
-    if (!user) {
-      return { success: false, message: "User not found" };
-    } else {
-      return { success: true, user };
-    }
-  }
-  async deleteUserByName(username) {
-    const user = await this.userRepository.deleteUserByName(username);;
-    if (!user) {
-      return { success: false, message: "User not found" };
-    } else {
-      return { success: true, message: "Delete user success" };
-    }
-  }
   
   async deleteTestUsers() {
     // Delete test users created during testing

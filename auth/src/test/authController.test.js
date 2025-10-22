@@ -143,35 +143,4 @@ describe("User Authentication", () => {
       expect(res).to.have.status(401);
     });
   });
-
-  describe("POST /profile", () => {
-    it("should get user profile with valid username", async () => {
-      const res = await chai
-        .request(app.app)
-        .post("/profile")
-        .send({ username: "testuser" });
-
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("username", "testuser");
-      expect(res.body).to.have.property("_id");
-    });
-
-    it("should return error for non-existent username", async () => {
-      const res = await chai
-        .request(app.app)
-        .post("/profile")
-        .send({ username: "nonexistentuser" });
-
-      expect(res).to.have.status(400);
-    });
-
-    it("should return error if username is missing", async () => {
-      const res = await chai
-        .request(app.app)
-        .post("/profile")
-        .send({});
-
-      expect(res).to.have.status(400);
-    });
-  });
 });

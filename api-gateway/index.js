@@ -10,16 +10,19 @@ const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || "http://localhost:300
 
 // Route requests to the auth service
 app.use("/auth", (req, res) => {
+  req.url = req.url.replace(/^\/auth/, '') || '/';
   proxy.web(req, res, { target: AUTH_SERVICE_URL });
 });
 
 // Route requests to the product service
 app.use("/products", (req, res) => {
+  req.url = req.url.replace(/^\/products/, '') || '/';
   proxy.web(req, res, { target: PRODUCT_SERVICE_URL });
 });
 
 // Route requests to the order service
 app.use("/orders", (req, res) => {
+  req.url = req.url.replace(/^\/orders/, '') || '/';
   proxy.web(req, res, { target: ORDER_SERVICE_URL });
 });
 
