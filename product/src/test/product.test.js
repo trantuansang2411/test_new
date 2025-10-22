@@ -258,4 +258,45 @@ describe("Products", function () {
       expect(res).to.have.status(401);
     });
   });
+
+  describe("GET /:id", function () {
+    let testOrderId;
+
+    it("should get order by valid ID", async function () {
+      this.timeout(10000); // Increase timeout for order creation + retrieval
+
+      // Step 1: Create a test order first
+      const orderData = [
+        {
+          _id: createdProductId,
+          quantity: 2
+        }
+      ];
+
+      const createRes = await chai
+        .request(app.app)
+        .post("/buy")
+        .set("Authorization", `Bearer ${authToken}`)
+        .send(orderData);
+
+      expect(createRes).to.have.status(201);
+      testOrderId = createRes.body._id;
+      console.log("Created test order with ID:", testOrderId);
+
+      // Step 2: Get the order by ID
+      const res = await chai
+        .request(app.app)
+        .get(`/${testOrderId}`)
+        .set("Authorization", `Bearer ${authToken}`);
+
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("_id");
+      expect(res.body).to.have.property("user");
+      expect(res.body).to.have.property("products");
+      expect(res.body.products).to.be.an("array");
+      expect(res.body).to.have.property("totalPrice");
+      expect(res.body).to.have.property("status");
+    });
+  });
+
 });
