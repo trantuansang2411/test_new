@@ -7,12 +7,12 @@ require("dotenv").config();
 
 chai.use(chaiHttp);
 
-describe("Products", () => {
+describe("Products", function () {
   let app;
   let authToken;
   let createdProductId;
 
-  before(async () => {
+  before(async function () {
     process.env.NODE_ENV = 'test'; // ✅ Set test environment
     app = new App();
     this.timeout(20000);
@@ -29,12 +29,12 @@ describe("Products", () => {
     app.start();
   });
 
-  after(async () => {
+  after(async function () {
     await app.disconnectDB();
     app.stop();
   });
 
-  describe("POST /buy", () => {
+  describe("POST /buy", function () {
     it("should create a new product with valid data", async () => {
       const product = {
         name: "Product 1",
@@ -113,7 +113,7 @@ describe("Products", () => {
     });
   });
 
-  describe("GET /", () => {
+  describe("GET /", function () {
     it("should get all products", async () => {
       const res = await chai
         .request(app.app)
@@ -146,7 +146,7 @@ describe("Products", () => {
     });
   });
 
-  describe("POST /buy", () => {
+  describe("POST /buy", function () {
     it("should create an order with valid products", async () => {
       const orderData = [
         {
