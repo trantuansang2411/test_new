@@ -52,7 +52,7 @@ class ProductsService {
     }
     //tạo sản phẩm order từ mảng foundProducts
     const productsOrder = foundProducts.map(p => {
-    const inputProduct = products.find(inp => inp._id === p._id.toString());
+      const inputProduct = products.find(inp => inp._id === p._id.toString());
       return {
         _id: p._id,
         name: p.name,
@@ -83,7 +83,7 @@ class ProductsService {
         const updatedOrder = { ...order, ...orderData, status: 'completed' };
         this.ordersMap.set(orderId, updatedOrder);
         console.log("Updated order:", updatedOrder);
-      }else {
+      } else {
         //update order error in the map
         const failedOrder = { ...order, status: 'failed', error: orderData.message };
         this.ordersMap.set(orderId, failedOrder);
@@ -96,27 +96,27 @@ class ProductsService {
       // In test environment, return immediately with pending status
       return { success: true, order: this.ordersMap.get(orderId) };
     }
-    
+
     let order = this.ordersMap.get(orderId);
     let attempts = 0;
     const maxAttempts = 10; // Maximum 10 seconds wait
-    
+
     while (order.status === 'pending' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       order = this.ordersMap.get(orderId);
       attempts++;
     }
-    
+
     //end long polling if order status failed
     if (order.status === 'failed') {
       return { success: false, message: order.error };
     }
-    
+
     // If still pending after max attempts, return timeout
     if (order.status === 'pending') {
       return { success: false, message: "Order processing timeout" };
     }
-    
+
     // Once the order is marked as completed, return the complete order details
     return { success: true, order };
   }

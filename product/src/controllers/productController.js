@@ -68,26 +68,14 @@ class ProductController {
 
   async getOrderById(req, res) {
     const { id } = req.params;
-    try {
-      console.log("Fetching order with ID:", id);
-      const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || 'http://localhost:3002';
-      const response = await axios.get(`${ORDER_SERVICE_URL}/${id}`, {
-        headers: { Authorization: req.headers.authorization }
-      });
-
-      const order = response.data;
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      return res.status(200).json(order);
-    } catch (error) {
-      // Map lỗi 404 của Order Service -> 404 cho client
-      if (error.response && error.response.status === 404) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      console.error("Order service error:", error.message);
-      return res.status(502).json({ message: "Order service unavailable" });
+    console.log("Fetching order with ID:", id);
+    const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || 'http://localhost:3002';
+    const response = await axios.get(`${ORDER_SERVICE_URL}/${id}`, { headers: { Authorization: req.headers.authorization } });
+    const order = response.data;
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
+    return res.status(200).json(order);
   }
 
   async getProducts(req, res) {

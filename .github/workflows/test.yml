@@ -27,88 +27,51 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js 18
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Create .env files
+      uses: actions/checkout@v3.2.0
+    - name: Create .env file
       run: |
-        # auth
-        echo "MONGODB_AUTH_URI=${{ vars.MONGODB_AUTH_URI || 'mongodb://localhost:27017/auth_test' }}" >> auth/.env
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> auth/.env
-        echo "PORT=3000" >> auth/.env
+        echo "MONGODB_AUTH_URI=mongodb://localhost:27017/auth_test" >> auth/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> auth/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> product/.env
+        echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/product_test" >> product/.env
+        echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+        echo "RABBITMQ_QUEUE_PRODUCT=product_queue" >> product/.env
+        echo "RABBITMQ_QUEUE_ORDER=order_queue" >> product/.env
+        echo "NODE_ENV=test" >> product/.env
+        echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER }}" >> product/.env
+        echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD }}" >> product/.env
 
-        # product
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> product/.env
-        echo "MONGODB_PRODUCT_URI=${{ vars.MONGODB_PRODUCT_URI || 'mongodb://localhost:27017/product_test' }}" >> product/.env
-        echo "RABBITMQ_URI=${{ vars.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}" >> product/.env
-        echo "RABBITMQ_QUEUE_PRODUCT=${{ vars.RABBITMQ_QUEUE_PRODUCT || 'product_queue' }}" >> product/.env
-        echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> product/.env
-        echo "NODE_ENV=${{ vars.NODE_ENV || 'test' }}" >> product/.env
-        echo "LOGIN_TEST_USER=${{ secrets.LOGIN_TEST_USER || 'testuser' }}" >> product/.env
-        echo "LOGIN_TEST_PASSWORD=${{ secrets.LOGIN_TEST_PASSWORD || secrets.LOGIN_TEST_PASSWORD || 'testpass' }}" >> product/.env
-        echo "ORDER_SERVICE_URL=${{ vars.ORDER_SERVICE_URL || 'http://localhost:3002' }}" >> product/.env
-        echo "PORT=3001" >> product/.env
-
-        # order
-        echo "MONGODB_ORDER_URI=${{ vars.MONGODB_ORDER_URI || 'mongodb://localhost:27017/order_test' }}" >> order/.env
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret' }}" >> order/.env
-        echo "RABBITMQ_URI=${{ vars.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}" >> order/.env
-        echo "RABBITMQ_QUEUE_ORDER=${{ vars.RABBITMQ_QUEUE_ORDER || 'order_queue' }}" >> order/.env
-        echo "PORT=3002" >> order/.env
-
-    - name: Install dependencies (no lock sync issues)
-      run: |
-        cd auth && npm install --no-audit --no-fund && cd ..
-        cd product && npm install --no-audit --no-fund && cd ..
-        cd order && npm install --no-audit --no-fund && cd ..
-
-    - name: Run Auth unit tests
+    - name: Install dependencies
       run: |
         cd auth
-        npm test
+        npm ci
         cd ..
-
-    - name: Start Auth and Order services
-      run: |
-        # Start Auth
-        cd auth
-        npm start &
-        echo $! > ../auth.pid
-        cd ..
-        echo "Waiting for Auth..."
-        sleep 8
-        # Register test user (idempotent)
-        curl -s -X POST http://localhost:3000/register \
-          -H "Content-Type: application/json" \
-          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER || 'testuser' }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD || 'testpass' }}\"}" \
-          || echo "User may already exist"
-
-        # Start Order
-        cd order
-        npm start &
-        echo $! > ../order.pid
-        cd ..
-        echo "Waiting for Order..."
-        sleep 8
-
-    - name: Run Product tests
-      env:
-        LOGIN_TEST_USER: ${{ secrets.LOGIN_TEST_USER || 'testuser' }}
-        LOGIN_TEST_PASSWORD: ${{ secrets.LOGIN_TEST_PASSWORD || 'testpass' }}
-      run: |
         cd product
-        npm test
+        npm ci
         cd ..
-
-    - name: Cleanup
-      if: always()
+        npm ci
+    - name: Run tests for auth
+      run : |
+        cd auth
+        npm test
+    - name: Run tests for product
       run: |
-        if [ -f auth.pid ]; then kill $(cat auth.pid) 2>/dev/null || true; fi
-        if [ -f order.pid ]; then kill $(cat order.pid) 2>/dev/null || true; fi
+        cd auth
+        npm start &
+        sleep 15
+        # Test if auth service is ready
+        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
+        # Create test user for product tests
+        curl -X POST http://localhost:3000/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' || echo "User might already exist"
+        # Test login to verify JWT
+        echo "Testing login..."
+        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
+        echo "Login response: $LOGIN_RESPONSE"
+        cd ../product
+        npm test

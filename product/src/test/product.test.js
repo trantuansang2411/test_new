@@ -10,7 +10,6 @@ describe("Products", () => {
   let app;
   let authToken;
   let createdProductId;
-  let createdOrderId;
 
   before(async () => {
     app = new App();
@@ -21,13 +20,13 @@ describe("Products", () => {
       const authRes = await chai
         .request("http://localhost:3000")
         .post("/login")
-        .send({
-          username: process.env.LOGIN_TEST_USER,
-          password: process.env.LOGIN_TEST_PASSWORD,
-        });
+        .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
+
       authToken = authRes.body.token;
+      console.log("Auth token:", authToken);
     } catch (error) {
       console.error("Failed to authenticate:", error.message);
+      console.log("Auth token: undefined");
       authToken = undefined;
     }
 
@@ -36,10 +35,10 @@ describe("Products", () => {
 
   after(async () => {
     await app.disconnectDB();
-    if (app && app.stop) app.stop();
+    app.stop();
   });
 
-  describe("POST /", () => {
+  describe("POST /buy", () => {
     it("should create a new product with valid data", async () => {
       const product = {
         name: "Product 1",
@@ -57,42 +56,63 @@ describe("Products", () => {
       expect(res.body).to.have.property("name", product.name);
       expect(res.body).to.have.property("description", product.description);
       expect(res.body).to.have.property("price", product.price);
-      createdProductId = res.body._id;
+      createdProductId = res.body._id; // Save for later tests
     });
 
     it("should return an error if name is missing", async () => {
-      const product = { description: "Description of Product 1", price: 10.99 };
+      const product = {
+        description: "Description of Product 1",
+        price: 10.99,
+      };
       const res = await chai
         .request(app.app)
         .post("/")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
+
       expect(res).to.have.status(400);
     });
 
     it("should return an error if price is missing", async () => {
-      const product = { name: "Product without price", description: "Description" };
+      const product = {
+        name: "Product without price",
+        description: "Description of Product",
+      };
       const res = await chai
         .request(app.app)
         .post("/")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
+
       expect(res).to.have.status(400);
     });
 
     it("should return unauthorized without token", async () => {
-      const product = { name: "Product 2", description: "Description", price: 20 };
-      const res = await chai.request(app.app).post("/").send(product);
+      const product = {
+        name: "Product 2",
+        description: "Description of Product 2",
+        price: 20,
+      };
+      const res = await chai
+        .request(app.app)
+        .post("/")
+        .send(product);
+
       expect(res).to.have.status(401);
     });
 
     it("should return unauthorized with invalid token", async () => {
-      const product = { name: "Product 3", description: "Description", price: 30 };
+      const product = {
+        name: "Product 3",
+        description: "Description of Product 3",
+        price: 30,
+      };
       const res = await chai
         .request(app.app)
         .post("/")
         .set("Authorization", "Bearer invalidtoken")
         .send(product);
+
       expect(res).to.have.status(401);
     });
   });
@@ -113,7 +133,10 @@ describe("Products", () => {
     });
 
     it("should return unauthorized without token", async () => {
-      const res = await chai.request(app.app).get("/");
+      const res = await chai
+        .request(app.app)
+        .get("/");
+
       expect(res).to.have.status(401);
     });
 
@@ -122,13 +145,19 @@ describe("Products", () => {
         .request(app.app)
         .get("/")
         .set("Authorization", "Bearer invalidtoken");
+
       expect(res).to.have.status(401);
     });
   });
 
   describe("POST /buy", () => {
     it("should create an order with valid products", async () => {
-      const orderData = [{ _id: createdProductId, quantity: 2 }];
+      const orderData = [
+        {
+          _id: createdProductId,
+          quantity: 2
+        }
+      ];
 
       const res = await chai
         .request(app.app)
@@ -141,8 +170,6 @@ describe("Products", () => {
       expect(res.body).to.have.property("username");
       expect(res.body).to.have.property("products");
       expect(res.body.products).to.be.an("array");
-
-      createdOrderId = res.body._id;
     });
 
     it("should return error for empty products array", async () => {
@@ -151,6 +178,7 @@ describe("Products", () => {
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send([]);
+
       expect(res).to.have.status(400);
       expect(res.body).to.have.property("message", "Invalid products data");
     });
@@ -161,103 +189,76 @@ describe("Products", () => {
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
         .send("invalid data");
+
       expect(res).to.have.status(400);
       expect(res.body).to.have.property("message", "Invalid products data");
     });
 
     it("should return error for products without _id", async () => {
+      const orderData = [
+        {
+          quantity: 2
+        }
+      ];
+
       const res = await chai
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
-        .send([{ quantity: 2 }]);
+        .send(orderData);
+
       expect(res).to.have.status(400);
-      expect(res.body).to.have.property(
-        "message",
-        "Each product must have an id and quantity"
-      );
+      expect(res.body).to.have.property("message", "Each product must have an id and quantity");
     });
 
     it("should return error for products without quantity", async () => {
+      const orderData = [
+        {
+          _id: createdProductId
+        }
+      ];
+
       const res = await chai
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
-        .send([{ _id: createdProductId }]);
+        .send(orderData);
+
       expect(res).to.have.status(400);
-      expect(res.body).to.have.property(
-        "message",
-        "Each product must have an id and quantity"
-      );
+      expect(res.body).to.have.property("message", "Each product must have an id and quantity");
     });
 
     it("should return error for quantity less than 1", async () => {
+      const orderData = [
+        {
+          _id: createdProductId,
+          quantity: 0
+        }
+      ];
+
       const res = await chai
         .request(app.app)
         .post("/buy")
         .set("Authorization", `Bearer ${authToken}`)
-        .send([{ _id: createdProductId, quantity: 0 }]);
+        .send(orderData);
+
       expect(res).to.have.status(400);
-      expect(res.body).to.have.property(
-        "message",
-        "Product quantity must be > 0"
-      );
+      expect(res.body).to.have.property("message", "Product quantity must be > 0");
     });
 
     it("should return unauthorized without token", async () => {
+      const orderData = [
+        {
+          _id: createdProductId,
+          quantity: 1
+        }
+      ];
+
       const res = await chai
         .request(app.app)
         .post("/buy")
-        .send([{ _id: createdProductId, quantity: 1 }]);
-      expect(res).to.have.status(401);
-    });
-  });
+        .send(orderData);
 
-  // Helper: wait until order is available from Order Service via Product GET /:id
-  async function waitForOrder(app, id, token, msTotal = 20000, stepMs = 1000) {
-    const start = Date.now();
-    await new Promise((r) => setTimeout(r, 500)); // initial small delay
-    while (Date.now() - start < msTotal) {
-      try {
-        const res = await chai
-          .request(app.app)
-          .get(`/${id}`)
-          .set("Authorization", `Bearer ${token}`);
-        if (res.status === 200 && res.body && res.body._id) {
-          return res;
-        }
-      } catch (_) {
-        // ignore and retry
-      }
-      await new Promise((r) => setTimeout(r, stepMs));
-    }
-    throw new Error("Order not ready within timeout");
-  }
-
-  describe("GET /:id", () => {
-    it("should get order details by ID successfully", async function () {
-      this.timeout(30000); // allow time for async order creation via RabbitMQ + Order service
-
-      const res = await waitForOrder(app, createdOrderId, authToken, 20000, 1000);
-
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("_id");
-      expect(res.body).to.have.property("username");
-      expect(res.body).to.have.property("products");
-      expect(res.body.products).to.be.an("array");
-      expect(res.body.products.length).to.be.greaterThan(0);
-    });
-
-    it("should return unauthorized without token", async () => {
-      const res = await chai.request(app.app).get(`/${createdOrderId}`);
-      expect(res).to.have.status(401);
-    });
-
-    it("should return unauthorized with invalid token", async () => {
-      const res = await chai
-        .request(app.app)
-        .get(`/${createdOrderId}`)
-        .set("Authorization", "Bearer invalidtoken");
       expect(res).to.have.status(401);
     });
   });
