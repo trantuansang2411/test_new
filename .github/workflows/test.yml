@@ -57,7 +57,7 @@ jobs:
         npm test
     - name: Run tests for product
       run: |
-        cd auth &&
+        cd auth
         npm start &
         sleep 5
         cd ../product
