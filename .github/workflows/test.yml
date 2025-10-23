@@ -66,6 +66,7 @@ jobs:
       if: matrix.service == 'product'
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
+        MONGODB_PRODUCT_URI: ${{ secrets.MONGODB_PRODUCT_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
         LOGIN_TEST_USER: ${{ secrets.LOGIN_TEST_USER }}
         LOGIN_TEST_PASSWORD: ${{ secrets.LOGIN_TEST_PASSWORD }}
