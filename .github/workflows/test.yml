@@ -74,6 +74,16 @@ jobs:
         sleep 5
         echo "✅ Auth service started."
 
+    - name: Register test user
+      if: matrix.service == 'product'
+      run: |
+        echo "🧑‍💻 Registering test user..."
+        curl -s -X POST http://localhost:3000/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"testuser","password":"123456"}' || true
+        echo "✅ Test user registered."
+        sleep 2
+
     # ✅ Kiểm tra Auth service đã sẵn sàng bằng curl
     - name: Verify Auth service ready
       if: matrix.service == 'product'
