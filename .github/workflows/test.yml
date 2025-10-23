@@ -117,5 +117,5 @@ jobs:
         LOGIN_TEST_USER: testuser
         LOGIN_TEST_PASSWORD: 123456
       run: |
-        echo "🚀 Running Product service tests..."
+        echo "🚀 Running Product service tests.."
         npm test
