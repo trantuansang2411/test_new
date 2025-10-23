@@ -90,7 +90,7 @@ jobs:
       if: matrix.service == 'product'
       run: |
         echo "🕒 Checking Auth service readiness..."
-        for i in {1..5}; do
+        for i in {1..10}; do
           if curl -s -X POST http://localhost:3000/login \
             -H "Content-Type: application/json" \
             -d '{"username":"testuser","password":"123456"}' | grep -q "token"; then
