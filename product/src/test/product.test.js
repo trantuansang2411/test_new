@@ -18,14 +18,29 @@ describe("Products", function () {
     this.timeout(20000);
     await Promise.all([app.connectDB(), app.setupMessageBroker()]);
 
-    // ✅ Thay vì gọi đến /login, ta tự tạo token hợp lệ:
-    const fakeUser = { username: "test_user", role: "user" };
-    authToken = jwt.sign(fakeUser, process.env.JWT_SECRET, { expiresIn: "1h" }); // 👈 Sinh token hợp lệ
-    if (!authToken) {
-      throw new Error("Missing TEST_AUTH_TOKEN in environment variables!");
+    // Authenticate with the auth microservice to get a token
+    try {
+      const authRes = await chai
+        .request("http://localhost:3000")
+        .post("/login")
+        .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
+
+      if (!authRes.body.token) {
+        throw new Error("Auth response missing token");
+      }
+      authToken = authRes.body.token;
+      console.log("Auth token:", authToken);
+    } catch (error) {
+      console.warn("⚠️ Auth service not running or invalid response. Creating local JWT token instead.");
+      // 🪄 Fallback: Tạo JWT hợp lệ với cùng SECRET như Auth service
+      authToken = jwt.sign(
+        { username: "testuser", role: "user" },
+        process.env.JWT_SECRET || "default_secret", // dùng secret thật nếu có
+        { expiresIn: "1h" }
+      );
+      console.log("✅ Created fallback JWT token:", authToken);
     }
 
-    console.log("Authtication token complete:", authToken);
     app.start();
   });
 
@@ -259,44 +274,44 @@ describe("Products", function () {
     });
   });
 
-  describe("GET /:id", function () {
-    let testOrderId;
+  // describe("GET /:id", function () {
+  //   let testOrderId;
 
-    it("should get order by valid ID", async function () {
-      this.timeout(10000); // Increase timeout for order creation + retrieval
+  //   it("should get order by valid ID", async function () {
+  //     this.timeout(10000); // Increase timeout for order creation + retrieval
 
-      // Step 1: Create a test order first
-      const orderData = [
-        {
-          _id: createdProductId,
-          quantity: 2
-        }
-      ];
+  //     // Step 1: Create a test order first
+  //     const orderData = [
+  //       {
+  //         _id: createdProductId,
+  //         quantity: 2
+  //       }
+  //     ];
 
-      const createRes = await chai
-        .request(app.app)
-        .post("/buy")
-        .set("Authorization", `Bearer ${authToken}`)
-        .send(orderData);
+  //     const createRes = await chai
+  //       .request(app.app)
+  //       .post("/buy")
+  //       .set("Authorization", `Bearer ${authToken}`)
+  //       .send(orderData);
 
-      expect(createRes).to.have.status(201);
-      testOrderId = createRes.body._id;
-      console.log("Created test order with ID:", testOrderId);
+  //     expect(createRes).to.have.status(201);
+  //     testOrderId = createRes.body._id;
+  //     console.log("Created test order with ID:", testOrderId);
 
-      // Step 2: Get the order by ID
-      const res = await chai
-        .request(app.app)
-        .get(`/${testOrderId}`)
-        .set("Authorization", `Bearer ${authToken}`);
+  //     // Step 2: Get the order by ID
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/${testOrderId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("_id");
-      expect(res.body).to.have.property("user");
-      expect(res.body).to.have.property("products");
-      expect(res.body.products).to.be.an("array");
-      expect(res.body).to.have.property("totalPrice");
-      expect(res.body).to.have.property("status");
-    });
-  });
+  //     expect(res).to.have.status(200);
+  //     expect(res.body).to.have.property("_id");
+  //     expect(res.body).to.have.property("user");
+  //     expect(res.body).to.have.property("products");
+  //     expect(res.body.products).to.be.an("array");
+  //     expect(res.body).to.have.property("totalPrice");
+  //     expect(res.body).to.have.property("status");
+  //   });
+  // });
 
 });

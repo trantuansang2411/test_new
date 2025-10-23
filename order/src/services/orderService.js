@@ -81,7 +81,7 @@ class OrderService {
 
     async getOrderById(orderId) {
         try {
-            const order = await OrderRepository.findOne({ orderMapId: orderId });
+            const order = await OrderRepository.findOne({ _id: orderId });
             return { success: true, order };
         } catch (err) {
             console.error("Failed to get order:", err.message);
