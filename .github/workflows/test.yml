@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Node.js CI Fast
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     services:
       mongo:
         image: mongo:6
@@ -16,8 +17,8 @@ jobs:
           - 27017:27017
         options: >-
           --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s
-          --health-timeout 5s
+          --health-interval 5s
+          --health-timeout 3s
           --health-retries 5
 
       rabbitmq:
@@ -27,71 +28,66 @@ jobs:
           - 15672:15672
         options: >-
           --health-cmd "rabbitmq-diagnostics -q ping"
-          --health-interval 10s
-          --health-timeout 5s
+          --health-interval 5s
+          --health-timeout 3s
           --health-retries 5
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22.x]
-        service: [auth, product]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 22.x
         cache: 'npm'
 
-    - name: Install dependencies
-      working-directory: ./${{ matrix.service }}
+    - name: Install dependencies (auth + product)
       run: |
-        echo "Installing dependencies for ${{ matrix.service }}"
-        npm ci --include=dev
+        npm ci --include=dev --prefix auth
+        npm ci --include=dev --prefix product
+        npm install -g wait-on
 
-    # ✅ AUTH TEST
-    - name: Run tests (Auth)
-      if: matrix.service == 'auth'
-      working-directory: ./auth
+    - name: Run Auth service in background
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      run: npm test
+      run: |
+        echo "Starting Auth service..."
+        npm start --prefix auth &
+        # dùng wait-on thay vì sleep
+        npx wait-on http://localhost:3000/dashboard
+        echo "✅ Auth service is ready!"
 
-    # ✅ PRODUCT TEST - cần Auth service chạy thật
-    - name: Run tests for product
-      if: matrix.service == 'product'
+    - name: Seed test user & login
+      env:
+        LOGIN_TEST_USER: ${{ secrets.LOGIN_TEST_USER }}
+        LOGIN_TEST_PASSWORD: ${{ secrets.LOGIN_TEST_PASSWORD }}
+      run: |
+        echo "Register + Login test user..."
+        {
+          curl -s -X POST http://localhost:3000/register \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}" || true
+          LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}")
+        } &
+        wait
+        echo "Login response: $LOGIN_RESPONSE"
+
+    - name: Run Auth tests
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      run: npm test --prefix auth
+
+    - name: Run Product tests
+      env:
         MONGODB_PRODUCT_URI: ${{ secrets.MONGODB_PRODUCT_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
         LOGIN_TEST_USER: ${{ secrets.LOGIN_TEST_USER }}
         LOGIN_TEST_PASSWORD: ${{ secrets.LOGIN_TEST_PASSWORD }}
-      run: |
-        echo "⚙️ Starting Auth service for integration test..."
-        cd auth
-        npm ci --include=dev
-        npm start &
-        echo "⏳ Waiting for Auth service to be ready..."
-        timeout 10 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 2; done' || echo "Auth service might not be ready"
-        
-        # Create test user
-        echo "👤 Creating test user..."
-        curl -X POST http://localhost:3000/register \
-          -H "Content-Type: application/json" \
-          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}" || echo "User might already exist"
-
-        # Test login
-        echo "🔑 Testing login..."
-        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
-          -H "Content-Type: application/json" \
-          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}")
-        echo "Login response: $LOGIN_RESPONSE"
-
-        cd ../product
-        npm ci --include=dev
-        echo "🚀 Running Product service tests..."
-        npm test
+        RABBITMQ_URI: amqp://guest:guest@localhost:5672
+        RABBITMQ_QUEUE_PRODUCT: product_queue
+        RABBITMQ_QUEUE_ORDER: order_queue
+      run: npm test --prefix product
