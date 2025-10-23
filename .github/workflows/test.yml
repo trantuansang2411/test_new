@@ -50,7 +50,7 @@ jobs:
       working-directory: ./${{ matrix.service }}
       run: |
         echo "Installing dependencies for ${{ matrix.service }}"
-        npm ci
+        npm ci --include=dev
 
     # ✅ Nếu service là "auth" → chạy test bình thường
     - name: Run tests (Auth)
