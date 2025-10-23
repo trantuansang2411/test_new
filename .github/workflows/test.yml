@@ -76,7 +76,7 @@ jobs:
         npm ci --include=dev
         npm start &
         echo "⏳ Waiting for Auth service to be ready..."
-        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 2; done' || echo "Auth service might not be ready"
+        timeout 10 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 2; done' || echo "Auth service might not be ready"
         
         # Create test user
         echo "👤 Creating test user..."
