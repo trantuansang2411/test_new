@@ -68,6 +68,7 @@ jobs:
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        PORT: 3000
       run: |
         echo "🚀 Starting Auth service in background..."
         nohup npm start > ../auth.log 2>&1 &
@@ -89,10 +90,10 @@ jobs:
       if: matrix.service == 'product'
       run: |
         echo "🕒 Checking Auth service readiness..."
-        for i in {1..10}; do
+        for i in {1..5}; do
           if curl -s -X POST http://localhost:3000/login \
             -H "Content-Type: application/json" \
-            -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' | grep -q "token"; then
+            -d '{"username":"testuser","password":"123456"}' | grep -q "token"; then
             echo "✅ Auth service is ready."
             exit 0
           fi
@@ -100,7 +101,7 @@ jobs:
           sleep 3
         done
         echo "❌ Auth service did not respond in time." >&2
-        cat ../auth.log || true
+        cat ./auth.log || true
         exit 1
 
     # ✅ Chạy test cho Product service (có gọi Auth thật)
