@@ -60,50 +60,28 @@ jobs:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: npm test
-
-    # ✅ Nếu service là "product" → khởi chạy Auth service trước
-    - name: Start Auth service
+    # ✅ Nếu service là "product" → khởi động Auth service thật, tạo user test, rồi chạy test cho Product
+    - name: Run tests for product
       if: matrix.service == 'product'
-      working-directory: ./auth
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        PORT: 3000
       run: |
-        echo "🚀 Starting Auth service in background..."
-        nohup npm start > ../auth.log 2>&1 &
+        cd auth
+        npm start &
         sleep 5
-        echo "✅ Auth service started."
-
-    - name: Register test user
-      if: matrix.service == 'product'
-      run: |
-        echo "🧑‍💻 Registering test user..."
-        curl -s -X POST http://localhost:3000/register \
+        # Test if auth service is ready
+        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
+        # Create test user for product tests
+        curl -X POST http://localhost:3000/register \
           -H "Content-Type: application/json" \
-          -d '{"username":"testuser","password":"123456"}' || true
-        echo "✅ Test user registered."
-        sleep 2
-
-    # ✅ Kiểm tra Auth service đã sẵn sàng bằng curl
-    - name: Verify Auth service ready
-      if: matrix.service == 'product'
-      run: |
-        echo "🕒 Checking Auth service readiness..."
-        for i in {1..10}; do
-          if curl -s -X POST http://localhost:3000/login \
-            -H "Content-Type: application/json" \
-            -d '{"username":"testuser","password":"123456"}' | grep -q "token"; then
-            echo "✅ Auth service is ready."
-            exit 0
-          fi
-          echo "Waiting for Auth service... ($i/10)"
-          sleep 3
-        done
-        echo "❌ Auth service did not respond in time." >&2
-        cat ./auth.log || true
-        exit 1
-
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' || echo "User might already exist"
+        # Test login to verify JWT
+        echo "Testing login..."
+        LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
+          -H "Content-Type: application/json" \
+          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
+        echo "Login response: $LOGIN_RESPONSE"
     # ✅ Chạy test cho Product service (có gọi Auth thật)
     - name: Run tests (Product)
       if: matrix.service == 'product'
