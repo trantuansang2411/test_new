@@ -2,9 +2,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
@@ -52,7 +52,7 @@ jobs:
         echo "Installing dependencies for ${{ matrix.service }}"
         npm ci --include=dev
 
-    # ✅ Nếu service là "auth" → chạy test bình thường
+    # ✅ AUTH TEST
     - name: Run tests (Auth)
       if: matrix.service == 'auth'
       working-directory: ./auth
@@ -60,40 +60,37 @@ jobs:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: npm test
-    # ✅ Nếu service là "product" → khởi động Auth service thật, tạo user test, rồi chạy test cho Product
+
+    # ✅ PRODUCT TEST - cần Auth service chạy thật
     - name: Run tests for product
       if: matrix.service == 'product'
       env:
         MONGODB_AUTH_URI: ${{ secrets.MONGODB_AUTH_URI }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        LOGIN_TEST_USER: ${{ secrets.LOGIN_TEST_USER }}
+        LOGIN_TEST_PASSWORD: ${{ secrets.LOGIN_TEST_PASSWORD }}
       run: |
+        echo "⚙️ Starting Auth service for integration test..."
         cd auth
+        npm ci --include=dev
         npm start &
-        sleep 5
-        # Test if auth service is ready
-        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 1; done' || echo "Auth service might not be ready"
-        # Create test user for product tests
+        echo "⏳ Waiting for Auth service to be ready..."
+        timeout 30 bash -c 'until curl -f http://localhost:3000/dashboard 2>/dev/null; do sleep 2; done' || echo "Auth service might not be ready"
+        
+        # Create test user
+        echo "👤 Creating test user..."
         curl -X POST http://localhost:3000/register \
           -H "Content-Type: application/json" \
-          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}' || echo "User might already exist"
-        # Test login to verify JWT
-        echo "Testing login..."
+          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}" || echo "User might already exist"
+
+        # Test login
+        echo "🔑 Testing login..."
         LOGIN_RESPONSE=$(curl -s -X POST http://localhost:3000/login \
           -H "Content-Type: application/json" \
-          -d '{"username":"'${{ secrets.LOGIN_TEST_USER }}'","password":"'${{ secrets.LOGIN_TEST_PASSWORD }}'"}')
+          -d "{\"username\":\"${{ secrets.LOGIN_TEST_USER }}\",\"password\":\"${{ secrets.LOGIN_TEST_PASSWORD }}\"}")
         echo "Login response: $LOGIN_RESPONSE"
-    # ✅ Chạy test cho Product service (có gọi Auth thật)
-    - name: Run tests (Product)
-      if: matrix.service == 'product'
-      working-directory: ./product
-      env:
-        MONGODB_PRODUCT_URI: ${{ secrets.MONGODB_PRODUCT_URI }}
-        RABBITMQ_URI: ${{ secrets.RABBITMQ_URI || 'amqp://guest:guest@localhost:5672' }}
-        RABBITMQ_QUEUE_PRODUCT: ${{ secrets.RABBITMQ_QUEUE_PRODUCT || 'product_queue' }}
-        RABBITMQ_QUEUE_ORDER: ${{ secrets.RABBITMQ_QUEUE_ORDER || 'order_queue' }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        LOGIN_TEST_USER: testuser
-        LOGIN_TEST_PASSWORD: 123456
-      run: |
-        echo "🚀 Running Product service tests.."
+
+        cd ../product
+        npm ci --include=dev
+        echo "🚀 Running Product service tests..."
         npm test
